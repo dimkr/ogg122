@@ -1,0 +1,23 @@
+                   _ ____  ____
+  ___   __ _  __ _/ |___ \|___ \
+ / _ \ / _` |/ _` | | __) | __) |
+| (_) | (_| | (_| | |/ __/ / __/
+ \___/ \__, |\__, |_|_____|_____|
+       |___/ |___/
+
+Overview
+========
+
+ogg122 is a tiny, standalone, public-domain alternative to ogg123
+(http://www.vorbis.com/) without big or exotic dependencies.
+
+It uses the wonderful stb_vorbis (http://www.nothings.org/stb_vorbis/) for
+decoding and tinyalsa (https://github.com/tinyalsa/tinyalsa) for playback.
+
+Credits and Legal Information
+=============================
+
+ogg122 is released into the public domain; see UNLICENSE for the license text.
+For a list of its authors and contributors, see AUTHORS.
+
+The ASCII art logo at the top was made using FIGlet (http://www.figlet.org/).
