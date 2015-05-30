@@ -14,7 +14,7 @@ INSTALL = install -v
 all: ogg122
 
 ogg122: ogg122.c
-	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS) $(LIBS)
 
 install: all
 	$(INSTALL) -D -m 755 ogg122 $(DESTDIR)/$(BIN_DIR)/ogg122
