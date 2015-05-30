@@ -1,113 +1,98 @@
+/*
+ * this file is part of ogg122.
+ *
+ * Copyright (c) 2014, 2015 Dima Krasner
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 #include <stdlib.h>
 #include <unistd.h>
+
 #include <tinyalsa/asoundlib.h>
-#include "stb_vorbis.c"
+#include "stb/stb_vorbis.c"
 
-/* the sample rate */
-#	define SAMPLE_RATE (44100)
+#define SAMPLE_RATE (44100)
+#define BUFFER_LEN (4096)
 
-/* the maximum number of chunks read at once */
-#	define SAMPLE_CHUNK_SIZE (4096)
+int main(int argc, char *argv[])
+{
+	struct pcm_config cfg;
+	stb_vorbis *input;
+	struct pcm *card;
+	short *buf;
+	int buflen;
+	int error;
+	int samples;
+	int ret = EXIT_FAILURE;
 
-/* the usage message */
-#	define USAGE "Usage: ogg012 PATH\n"
-
-static void _show_help() {
-	(void) write(STDOUT_FILENO, USAGE, sizeof(USAGE) - sizeof(char));
-}
-
-int main(int argc, char *argv[]) {
-	/* playback settings */
-	struct pcm_config config = {0};
-
-	/* the decoding chunk size */
-	int chunk_size = 0;
-
-	/* an error code */
-	int error = 0;
-
-	/* the number of samples read at once */
-	int samples = 0;
-
-	/* the exit code */
-	int exit_code = EXIT_FAILURE;
-
-	/* the input file */
-	stb_vorbis *input = NULL;
-
-	/* a sound card */
-	struct pcm *card = NULL;
-
-	/* the decoded data */
-	short *data = NULL;
-
-	/* make sure only one argument was passed */
 	if (2 != argc) {
-		_show_help();
+		(void) fprintf(stderr, "Usage: %s PATH\n", argv[0]);
 		goto end;
 	}
 
-	/* open the input file */
 	input = stb_vorbis_open_filename(argv[1], &error, NULL);
-	if (NULL == input) {
-		if (VORBIS_file_open_failure == error) {
-			_show_help();
-		}
+	if (NULL == input)
 		goto end;
-	}
 
-	/* open the sound card */
-	config.channels = input->channels;
-	config.rate = SAMPLE_RATE;
-	config.period_size = 1024;
-	config.period_count = 4;
-	config.format = PCM_FORMAT_S16_LE;
-	config.start_threshold = 0;
-	config.stop_threshold = 0;
-	config.silence_threshold = 0;
-	card = pcm_open(0, 0, PCM_OUT, &config);
-	if (NULL == card) {
+	cfg.channels = input->channels;
+	cfg.rate = SAMPLE_RATE;
+	cfg.period_size = 1024;
+	cfg.period_count = 4;
+	cfg.format = PCM_FORMAT_S16_LE;
+	cfg.start_threshold = 0;
+	cfg.stop_threshold = 0;
+	cfg.silence_threshold = 0;
+	card = pcm_open(0, 0, PCM_OUT, &cfg);
+	if (NULL == card)
 		goto close_input;
-	}
 
-	/* allocate memory for decoded samples */
-	chunk_size = SAMPLE_CHUNK_SIZE * input->channels;
-	data = (short *) malloc(sizeof(short) * chunk_size);
-	if (data == NULL) {
+	buflen = BUFFER_LEN * input->channels;
+	buf = (short *) malloc(sizeof(short) * buflen);
+	if (buf == NULL)
 		goto close_card;
-	}
 
 	do {
 		/* read and decode samples */
 		samples = stb_vorbis_get_frame_short_interleaved(input,
 		                                                 input->channels,
-		                                                 data,
-		                                                 chunk_size);
-		if (0 == samples) {
+		                                                 buf,
+		                                                 buflen);
+		if (0 == samples)
 			break;
-		}
 
 		/* play the decoded samples */
-		if (0 != pcm_write(card, data, pcm_frames_to_bytes(card, samples))) {
-			goto free_samples;
-		}
+		if (0 != pcm_write(card, buf, pcm_frames_to_bytes(card, samples)))
+			goto free_buf;
 	} while (1);
 
-	/* report success */
-	exit_code = EXIT_SUCCESS;
+	ret = EXIT_SUCCESS;
 
-free_samples:
-	/* free the decoded samples */
-	free(data);
+free_buf:
+	free(buf);
 
 close_card:
-	/* close the sound card */
 	(void) pcm_close(card);
 
 close_input:
-	/* close the input file */
 	stb_vorbis_close(input);
 
 end:
-	return exit_code;
+	return ret;
 }
