@@ -5,6 +5,7 @@ DESTDIR ?=
 BIN_DIR ?= /bin
 MAN_DIR ?= /usr/share/man
 DOC_DIR ?= /usr/share/doc
+RM ?= rm
 
 CFLAGS += -Wall -pedantic
 LIBS = -ltinyalsa
@@ -23,5 +24,12 @@ install: all
 	$(INSTALL) -m 644 AUTHORS $(DESTDIR)/$(DOC_DIR)/ogg122/AUTHORS
 	$(INSTALL) -m 644 COPYING $(DESTDIR)/$(DOC_DIR)/ogg122/COPYING
 
+uninstall:
+	$(RM) -f $(DESTDIR)/$(BINDIR)/ogg122
+	$(RM) -f $(DESTDIR)/$(BINDIR)/ogg122.1
+	$(RM) $(DESTDIR)/$(DOC_DIR)/ogg122/README
+	$(RM) $(DESTDIR)/$(DOC_DIR)/ogg122/AUTHORS
+	$(RM) $(DESTDIR)/$(DOC_DIR)/ogg122/COPYING
+
 clean:
-	rm -f ogg122
+	$(RM) -f ogg122
